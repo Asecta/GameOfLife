@@ -24,7 +24,7 @@ const int BATCHED_THREAD_STRIDE = BOARD_SIZE / BATCHED_THREAD_COUNT;
 const int CURRENT_MODE = MODE_PARALLEL_BATCHED;
 
 // Storing the game as integers rather than booleans, as it's easier to render and i think c++ stores bools as 16 bits anyway.
-vector<int> currentGameState(BOARD_SIZE, WHITE);
+vector<int> gameState(BOARD_SIZE, WHITE);
 
 bool getCellByIndex(vector<int> &board, int index) {
     if (index < 0 || index >= BOARD_SIZE) return false;
@@ -55,19 +55,19 @@ bool updateCell(vector<int> &board, int index) {
     return state;
 }
 
-void serialUpdate(vector<int> &oldGameState, vector<int> &newGameState) {
+void serialUpdate(vector<int> oldGameState, vector<int> &newGameState) {
     for (int index = 0; index < BOARD_SIZE; index++) {
         newGameState[index] = updateCell(oldGameState, index) ? BLACK : WHITE;
     }
 }
 
-void parallelUpdate(vector<int> &oldGameState, vector<int> &newGameState) {
+void parallelUpdate(vector<int> oldGameState, vector<int> &newGameState) {
     tbb::parallel_for(size_t(0), size_t(oldGameState.size()), [&](size_t index) {
         newGameState[index] = updateCell(oldGameState, index) ? BLACK : WHITE;
     });
 }
 
-void batchedUpdate(vector<int> &oldGameState, vector<int> &newGameState) {
+void batchedUpdate(vector<int> oldGameState, vector<int> &newGameState) {
     tbb::parallel_for(0, BATCHED_THREAD_COUNT, [&](size_t threadIndex) {
         for (int index = threadIndex * BATCHED_THREAD_STRIDE;
              index < (threadIndex + 1) * BATCHED_THREAD_STRIDE; index++) {
@@ -77,21 +77,17 @@ void batchedUpdate(vector<int> &oldGameState, vector<int> &newGameState) {
 }
 
 void updateGame() {
-    vector<int> newGameState(BOARD_SIZE, WHITE);
-
     switch (CURRENT_MODE) {
         case MODE_SERIAL:
-            serialUpdate(currentGameState, newGameState);
+            serialUpdate(gameState, gameState);
             break;
         case MODE_PARALLEL:
-            parallelUpdate(currentGameState, newGameState);
+            parallelUpdate(gameState, gameState);
             break;
         case MODE_PARALLEL_BATCHED:
-            batchedUpdate(currentGameState, newGameState);
+            batchedUpdate(gameState, gameState);
             break;
     }
-
-    currentGameState = newGameState;
 }
 
 
@@ -109,7 +105,7 @@ void populate() {
     for (int i = 0; i < vectorArray.size(); i += 2) {
         int cellX = vectorArray[i];
         int cellY = vectorArray[i + 1];
-        currentGameState[cellY * HEIGHT + cellX] = BLACK;
+        gameState[cellY * HEIGHT + cellX] = BLACK;
     }
 
     initialStateFile.close();
@@ -137,7 +133,7 @@ int main(int argc, char *argv[]) {
 
         updateGame();
         // Draw our game.
-        SDL_UpdateTexture(texture, nullptr, currentGameState.data(), WIDTH * sizeof(int));
+        SDL_UpdateTexture(texture, nullptr, gameState.data(), WIDTH * sizeof(int));
         SDL_RenderClear(renderer);
         SDL_RenderCopy(renderer, texture, nullptr, nullptr);
         SDL_RenderPresent(renderer);
