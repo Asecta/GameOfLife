@@ -7,7 +7,7 @@ endif()
 
 project(GameOfLife)
 
-add_executable(GameOfLife WIN32 src/main.cpp)
+add_executable(GameOfLife src/main.cpp)
 
 find_package(TBB CONFIG REQUIRED)
 target_link_libraries(GameOfLife PRIVATE TBB::tbb)

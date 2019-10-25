@@ -155,10 +155,10 @@ void runHeadless() {
     int simulationStartSize = 64;
 
     int stepsPerSimulation = 1000;
-    int simulationSpaceStep = 16;
+    int simulationSpaceStep = 32;
 
-    int simulationCount = 32;//32
-    int threadTestCount = 32;//32
+    int simulationCount = 16;
+    int threadTestCount = 32;
 
     cout << "Running game of life in headless mode..." << endl << flush;
     cout << "Steps per simulation: " << stepsPerSimulation << endl << flush;
