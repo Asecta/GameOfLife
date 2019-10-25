@@ -6,30 +6,32 @@
 
 using namespace std;
 
+const int scale = 2;
+const int width = 512;
+const int height = 512;
+const int boardSize = width * height;
+
 const int MODE_SERIAL = 0;
 const int MODE_PARALLEL = 1;
-const int MODE_PARALLEL_BATCHED = 2;
+const int MODE_PARALLEL_BATCHED = 4;
 
-const int CURRENT_MODE = MODE_PARALLEL;
+const int BATCHED_THREAD_COUNT = 4;
+const int BATCHED_THREAD_STRIDE = boardSize / BATCHED_THREAD_COUNT;
 
-const int scale = 8;
-const int width = 64;
-const int height = 64;
-const int boardSize = width * height;
+const int CURRENT_MODE = MODE_PARALLEL_BATCHED;
+
 
 const int BLACK = 0x0;
 const int WHITE = 0xFFFFFF;
 
-int *gameBoard = new int[boardSize];
+vector<int> gameBoard(boardSize, WHITE);
 
-bool getCellByIndex(int *board, int index) {
-    if (index < 0 || index > boardSize) {
-        return false;
-    }
+bool getCellByIndex(vector<int> &board, int index) {
+    if (index < 0 || index >= boardSize) return false;
     return board[index] == BLACK;
 }
 
-int countAliveNeighbours(int *board, int index) {
+int countAliveNeighbours(vector<int> &board, int index) {
     int count = 0;
     count += getCellByIndex(board, index - width - 1) ? 1 : 0;
     count += getCellByIndex(board, index - width) ? 1 : 0;
@@ -42,35 +44,40 @@ int countAliveNeighbours(int *board, int index) {
     return count;
 }
 
-bool updateCell(int *board, int index) {
+bool updateCell(vector<int> &board, int index) {
     int aliveNeighbors = countAliveNeighbours(board, index);
     bool state = getCellByIndex(board, index);
 
     if (state && aliveNeighbors < 2) return false;
     if (state && aliveNeighbors > 3) return false;
     if (!state && aliveNeighbors == 3) return true;
-
     return state;
 }
 
-void serialUpdate(int *oldGameBoard, int *newGameBoard) {
+void serialUpdate(vector<int> &oldGameBoard, vector<int> &newGameBoard) {
     for (int index = 0; index < boardSize; index++) {
         newGameBoard[index] = updateCell(oldGameBoard, index) ? BLACK : WHITE;
     }
 }
 
-void parallelUpdate(int *oldGameBoard, int *newGameBoard) {
-    tbb::parallel_for(size_t(0), size_t(oldGameBoard), [&](int i) {
-        newGameBoard[i] = updateCell(oldGameBoard, i) ? BLACK : WHITE;
+void parallelUpdate(vector<int> &oldGameBoard, vector<int> &newGameBoard) {
+    tbb::parallel_for(size_t(0), size_t(oldGameBoard.size()), [&](size_t index) {
+        newGameBoard[index] = updateCell(oldGameBoard, index) ? BLACK : WHITE;
     });
 }
 
-void batchedUpdate(int *oldGameBoard, int *newGameBoard) {
-
+void batchedUpdate(vector<int> &oldGameBoard, vector<int> &newGameBoard) {
+    tbb::parallel_for(0, BATCHED_THREAD_COUNT, [&](size_t threadIndex) {
+        for (int batchIndex = threadIndex * BATCHED_THREAD_STRIDE;
+             batchIndex < (threadIndex + 1) * BATCHED_THREAD_STRIDE; batchIndex++) {
+            int index = +batchIndex;
+            newGameBoard[index] = updateCell(oldGameBoard, index) ? BLACK : WHITE;
+        }
+    });
 }
 
 void updateGame() {
-    int *newGameBoard = new int[boardSize];
+    vector<int> newGameBoard(boardSize, WHITE);
 
     switch (CURRENT_MODE) {
         case MODE_SERIAL:
@@ -87,17 +94,24 @@ void updateGame() {
     gameBoard = newGameBoard;
 }
 
+
 void populate() {
     ifstream initialStateFile;
     initialStateFile.open("../initialstate.txt");
 
-    char c;
-    int index = 0;
-    while (initialStateFile >> c) {
-        if (c != 'x' && c != '-') continue;
-        gameBoard[index++] = c == 'x' ? BLACK : WHITE;
+    vector<int> vectorArray;
+
+    int in;
+    while (initialStateFile >> in) {
+        vectorArray.push_back(in);
     }
 
+    for (int i = 0; i < vectorArray.size(); i += 2) {
+        int cellX = vectorArray[i];
+        int cellY = vectorArray[i + 1];
+        gameBoard[cellY * height + cellX] = BLACK;
+    }
+    
     initialStateFile.close();
 }
 
@@ -124,14 +138,14 @@ int main(int argc, char *argv[]) {
                 quit = true;
             }
         }
-        // Update the game board.
+
+        updateGame();
 
         // Draw our game.
-        SDL_UpdateTexture(tex, nullptr, gameBoard, width * sizeof(int));
+        SDL_UpdateTexture(tex, nullptr, gameBoard.data(), width * sizeof(int));
         SDL_RenderClear(ren);
         SDL_RenderCopy(ren, tex, nullptr, nullptr);
         SDL_RenderPresent(ren);
-        updateGame();
     }
 
     SDL_DestroyTexture(tex);
