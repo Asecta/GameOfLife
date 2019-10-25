@@ -151,10 +151,9 @@ void runGUI() {
 }
 
 void runHeadless() {
-    int simulationStartSize = 128;
-
     int stepsPerSimulation = 1000;
-    int simulationSpaceStep = 128;
+    int simulationStartSize = 64;
+    int simulationSpaceStep = 64;
 
     int simulationCount = 16;
     int threadTestCount = 16;
