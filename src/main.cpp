@@ -150,15 +150,15 @@ void runGUI() {
     SDL_Quit();
 }
 
-
 void runHeadless() {
-    int simulationStartSize = 64;
+    int simulationStartSize = 128;
 
     int stepsPerSimulation = 1000;
-    int simulationSpaceStep = 32;
+    int simulationSpaceStep = 128;
 
     int simulationCount = 16;
-    int threadTestCount = 32;
+    int threadTestCount = 16;
+    int threadStep = 2;
 
     cout << "Running game of life in headless mode..." << endl << flush;
     cout << "Steps per simulation: " << stepsPerSimulation << endl << flush;
@@ -173,7 +173,7 @@ void runHeadless() {
         dataFile << "," << size << "x" << size;
     }
 
-    for (threadCount = 1; threadCount < threadTestCount; threadCount++) {
+    for (threadCount = 1; threadCount <= threadTestCount * threadStep; threadCount += threadStep) {
         cout << "Testing on " << threadCount << " thread(s)" << endl << flush;
         dataFile << endl << flush << threadCount;
 
