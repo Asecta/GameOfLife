@@ -10,7 +10,7 @@ using namespace std;
 using namespace std::chrono;
 
 const bool HEADLESS = false;
-const int GUI_SCALE = 2;
+const int GUI_SCALE = 3;
 const int BLACK = 0x0;
 const int WHITE = 0xFFFFFF;
 
@@ -19,11 +19,11 @@ const int MODE_PARALLEL = 1;
 const int MODE_PARALLEL_BATCHED = 4;
 const int CURRENT_MODE = MODE_PARALLEL_BATCHED;
 
-int width = 256;
-int height = 256;
+int width = 224;
+int height = 224;
 int boardSize = width * height;
 
-int threadCount = 12;
+int threadCount = 1;
 int threadStride = boardSize / threadCount;
 
 
@@ -83,7 +83,7 @@ void batchedUpdate(vector<int> oldGameState, vector<int> &newGameState) {
 void updateGame() {
     batchedUpdate(gameState, gameState);
 
-/*    switch (CURRENT_MODE) {
+    switch (CURRENT_MODE) {
         case MODE_SERIAL:
             serialUpdate(gameState, gameState);
             break;
@@ -93,7 +93,7 @@ void updateGame() {
         case MODE_PARALLEL_BATCHED:
             batchedUpdate(gameState, gameState);
             break;
-    }*/
+    }
 }
 
 
