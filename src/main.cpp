@@ -9,7 +9,7 @@
 using namespace std;
 using namespace std::chrono;
 
-const bool HEADLESS = true;
+const bool HEADLESS = false;
 const int GUI_SCALE = 2;
 const int BLACK = 0x0;
 const int WHITE = 0xFFFFFF;
@@ -19,11 +19,11 @@ const int MODE_PARALLEL = 1;
 const int MODE_PARALLEL_BATCHED = 4;
 const int CURRENT_MODE = MODE_PARALLEL_BATCHED;
 
-int width = 512;
-int height = 512;
+int width = 256;
+int height = 256;
 int boardSize = width * height;
 
-int threadCount = 4;
+int threadCount = 12;
 int threadStride = boardSize / threadCount;
 
 
@@ -81,7 +81,9 @@ void batchedUpdate(vector<int> oldGameState, vector<int> &newGameState) {
 }
 
 void updateGame() {
-    switch (CURRENT_MODE) {
+    batchedUpdate(gameState, gameState);
+
+/*    switch (CURRENT_MODE) {
         case MODE_SERIAL:
             serialUpdate(gameState, gameState);
             break;
@@ -91,7 +93,7 @@ void updateGame() {
         case MODE_PARALLEL_BATCHED:
             batchedUpdate(gameState, gameState);
             break;
-    }
+    }*/
 }
 
 
@@ -119,7 +121,7 @@ void populate() {
 void runGUI() {
     // the following is pretty much SDL2 boilerplate
     SDL_Window *window = SDL_CreateWindow("Game of life", 100, 100, width * GUI_SCALE, height * GUI_SCALE, SDL_WINDOW_SHOWN);
-    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     SDL_Texture *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, width, height);
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
 
