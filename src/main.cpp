@@ -5,99 +5,15 @@
 #include <tbb/tbb.h>
 #include <chrono>
 #include <ctime>
+#include "gameimpl/GameOfLifeInstance.h"
 
 using namespace std;
 using namespace std::chrono;
 
 const bool HEADLESS = false;
 const int GUI_SCALE = 3;
-const int BLACK = 0x0;
-const int WHITE = 0xFFFFFF;
 
-const int MODE_SERIAL = 0;
-const int MODE_PARALLEL = 1;
-const int MODE_PARALLEL_BATCHED = 4;
-const int CURRENT_MODE = MODE_PARALLEL_BATCHED;
-
-int width = 224;
-int height = 224;
-int boardSize = width * height;
-
-int threadCount = 1;
-int threadStride = boardSize / threadCount;
-
-
-// Storing the game as integers rather than booleans, as it's easier to render and i think c++ stores bools as 16 bits anyway.
-vector<int> gameState(boardSize, WHITE);
-
-bool getCellByIndex(vector<int> &board, int index) {
-    if (index < 0 || index >= boardSize) return false;
-    return board[index] == BLACK;
-}
-
-int countAliveNeighbours(vector<int> &board, int index) {
-    int count = 0;
-    // Hard-Coded neighbour iteration since idk how c++ unwraps for loops and it's easier on a 1d array.
-    count += getCellByIndex(board, index - width - 1) ? 1 : 0;
-    count += getCellByIndex(board, index - width) ? 1 : 0;
-    count += getCellByIndex(board, index - width + 1) ? 1 : 0;
-    count += getCellByIndex(board, index - 1) ? 1 : 0;
-    count += getCellByIndex(board, index + 1) ? 1 : 0;
-    count += getCellByIndex(board, index + width - 1) ? 1 : 0;
-    count += getCellByIndex(board, index + width) ? 1 : 0;
-    count += getCellByIndex(board, index + width + 1) ? 1 : 0;
-    return count;
-}
-
-bool updateCell(vector<int> &board, int index) {
-    int aliveNeighbors = countAliveNeighbours(board, index);
-    bool state = getCellByIndex(board, index);
-
-    if (state && aliveNeighbors < 2) return false;
-    if (state && aliveNeighbors > 3) return false;
-    if (!state && aliveNeighbors == 3) return true;
-    return state;
-}
-
-void serialUpdate(vector<int> oldGameState, vector<int> &newGameState) {
-    for (int index = 0; index < boardSize; index++) {
-        newGameState[index] = updateCell(oldGameState, index) ? BLACK : WHITE;
-    }
-}
-
-void parallelUpdate(vector<int> oldGameState, vector<int> &newGameState) {
-    tbb::parallel_for(size_t(0), size_t(oldGameState.size()), [&](size_t index) {
-        newGameState[index] = updateCell(oldGameState, index) ? BLACK : WHITE;
-    });
-}
-
-void batchedUpdate(vector<int> oldGameState, vector<int> &newGameState) {
-    tbb::parallel_for(0, threadCount, [&](size_t threadIndex) {
-        for (int index = threadIndex * threadStride;
-             index < (threadIndex + 1) * threadStride; index++) {
-            newGameState[index] = updateCell(oldGameState, index) ? BLACK : WHITE;
-        }
-    });
-}
-
-void updateGame() {
-    batchedUpdate(gameState, gameState);
-
-    switch (CURRENT_MODE) {
-        case MODE_SERIAL:
-            serialUpdate(gameState, gameState);
-            break;
-        case MODE_PARALLEL:
-            parallelUpdate(gameState, gameState);
-            break;
-        case MODE_PARALLEL_BATCHED:
-            batchedUpdate(gameState, gameState);
-            break;
-    }
-}
-
-
-void populate() {
+void populate(IGameOfLifeInstance &instance) {
     ifstream initialStateFile;
     initialStateFile.open("../initialstate.txt");
 
@@ -111,7 +27,7 @@ void populate() {
     for (int i = 0; i < vectorArray.size(); i += 2) {
         int cellX = vectorArray[i];
         int cellY = vectorArray[i + 1];
-        gameState[cellY * height + cellX] = BLACK;
+        instance.setCell(cellX, cellY, BLACK);
     }
 
     initialStateFile.close();
@@ -119,16 +35,19 @@ void populate() {
 
 
 void runGUI() {
+    IGameOfLifeInstance instance = SerialGameOfLife(256, 256);
     // the following is pretty much SDL2 boilerplate
-    SDL_Window *window = SDL_CreateWindow("Game of life", 100, 100, width * GUI_SCALE, height * GUI_SCALE, SDL_WINDOW_SHOWN);
+    SDL_Window *window = SDL_CreateWindow("Game of life", 100, 100, instance.getWidth() * GUI_SCALE, instance.getHeight() * GUI_SCALE, SDL_WINDOW_SHOWN);
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    SDL_Texture *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, width, height);
+    SDL_Texture *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, instance.getWidth(), instance.getHeight());
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
 
-    populate();
+    populate(instance);
 
     bool quit = false;
     SDL_Event event;
+
+    int pitch = instance.getWidth() * sizeof(int);
 
     while (!quit) {
         // Poll the even loop, otherwise windows times out the application
@@ -138,9 +57,11 @@ void runGUI() {
             }
         }
 
-        updateGame();
+        // Update the game
+        instance.nextState();
+
         // Draw our game.
-        SDL_UpdateTexture(texture, nullptr, gameState.data(), width * sizeof(int));
+        SDL_UpdateTexture(texture, nullptr, instance.getCurrentState().data(), pitch);
         SDL_RenderClear(renderer);
         SDL_RenderCopy(renderer, texture, nullptr, nullptr);
         SDL_RenderPresent(renderer);
@@ -174,25 +95,23 @@ void runHeadless() {
         dataFile << "," << size << "x" << size;
     }
 
-    for (threadCount = 1; threadCount <= threadTestCount * threadStep; threadCount += threadStep) {
+    for (int threadCount = 1; threadCount <= threadTestCount * threadStep; threadCount += threadStep) {
         cout << "Testing on " << threadCount << " thread(s)" << endl << flush;
         dataFile << endl << flush << threadCount;
 
         for (int simulationNo = 0; simulationNo < simulationCount; simulationNo++) {
-            width = simulationStartSize + simulationSpaceStep * simulationNo;
-            height = simulationStartSize + simulationSpaceStep * simulationNo;
-            boardSize = width * height;
-            gameState = vector<int>(boardSize, WHITE);
-            threadStride = boardSize / threadCount;
+            int width = simulationStartSize + simulationSpaceStep * simulationNo;
+            int height = simulationStartSize + simulationSpaceStep * simulationNo;
+            IGameOfLifeInstance instance = ParallelGameOfLife(width, height, threadCount);
 
-            populate();
+            populate(instance);
 
             cout << "Running simulation of size " << width << "x" << height << " on " << threadCount << " threads... " << std::flush;
 
             high_resolution_clock::time_point startTime = high_resolution_clock::now();
 
             for (int step = 0; step < stepsPerSimulation; step++) {
-                updateGame();
+                instance.nextState();
             }
 
             high_resolution_clock::time_point endTime = high_resolution_clock::now();

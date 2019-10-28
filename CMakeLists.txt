@@ -5,9 +5,15 @@ if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
             CACHE STRING "")
 endif()
 
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
 project(GameOfLife)
 
-add_executable(GameOfLife src/main.cpp)
+add_executable(GameOfLife src/main.cpp src/gameimpl/GameOfLifeInstance.h src/gameimpl/GameOfLifeInstance.h)
 
 find_package(TBB CONFIG REQUIRED)
 target_link_libraries(GameOfLife PRIVATE TBB::tbb)
