@@ -13,7 +13,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 project(GameOfLife)
 
-add_executable(GameOfLife src/main.cpp src/gameimpl/GameOfLifeInstance.h src/gameimpl/GameOfLifeInstance.h)
+add_executable(GameOfLife src/main.cpp src/gameimpl/GameOfLifeInstance.h src/gameimpl/GameOfLifeInstance.cpp)
 
 find_package(TBB CONFIG REQUIRED)
 target_link_libraries(GameOfLife PRIVATE TBB::tbb)

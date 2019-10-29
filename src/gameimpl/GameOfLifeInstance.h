@@ -7,7 +7,7 @@ const int WHITE = 0xFFFFFF;
 using namespace std;
 
 class IGameOfLifeInstance {
-private:
+
     int width;
     int height;
     int boardSize;
@@ -18,34 +18,43 @@ public:
 
     vector<int> getCurrentState();
 
-    int getWidth() { return this->width; };
-
-    int getHeight() { return this->height; };
-
-    int getBoardSize() { return this->boardSize; };
-
     void setCell(int x, int y, bool state);
 
     void nextState();
 
-protected:
-    int countAliveNeighbours();
+    int getBoardSize();
 
-    bool getCellByIndex(vector<int> &gameState, int index);
+    int getWidth();
+
+    int getHeight();
+
+protected:
+    bool getCellByIndex(vector<int> &board, int index);
+
+    int countAliveNeighbours(vector<int> &gameState, int index);
 
     bool updateCell(vector<int> &gameState, int index);
 
-    virtual void executeStep(vector<int> &oldState, vector<int> &newState);
+    void executeStep(vector<int> &oldState, vector<int> &newState);
 };
+
 
 class SerialGameOfLife : public IGameOfLifeInstance {
 public:
-    SerialGameOfLife(int width, int height) : IGameOfLifeInstance(width, height) {}
+    SerialGameOfLife(int width, int height);
+
+protected:
+    void executeStep(vector<int> &oldState, vector<int> &newState);
 };
 
 class ParallelGameOfLife : public IGameOfLifeInstance {
+    int threadCount;
+    int threadStride;
 public:
-    ParallelGameOfLife(int width, int height, int threadCount) : IGameOfLifeInstance(width, height) {}
+    ParallelGameOfLife(int width, int height, int threadCount);
+
+protected:
+    void executeStep(vector<int> &oldState, vector<int> &newState);
 };
 
 #endif
