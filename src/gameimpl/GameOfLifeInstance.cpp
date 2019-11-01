@@ -31,11 +31,17 @@ void IGameOfLifeInstance::nextState() {
     gameState = newState;
 }
 
-int IGameOfLifeInstance::getBoardSize() { return boardSize; }
+int IGameOfLifeInstance::getBoardSize() {
+    return boardSize;
+}
 
-int IGameOfLifeInstance::getWidth() { return width; }
+int IGameOfLifeInstance::getWidth() {
+    return width;
+}
 
-int IGameOfLifeInstance::getHeight() { return height; }
+int IGameOfLifeInstance::getHeight() {
+    return height;
+}
 
 bool IGameOfLifeInstance::getCellByIndex(vector<int> &board, int index) {
     if (index < 0 || index >= boardSize)
