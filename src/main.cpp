@@ -27,7 +27,7 @@ void populate(IGameOfLifeInstance &instance) {
     for (int i = 0; i < vectorArray.size(); i += 2) {
         int cellX = vectorArray[i];
         int cellY = vectorArray[i + 1];
-        instance.setCell(cellX, cellY, BLACK);
+        instance.setCell(cellX, cellY, true);
     }
 
     initialStateFile.close();
@@ -35,7 +35,7 @@ void populate(IGameOfLifeInstance &instance) {
 
 
 void runGUI() {
-    IGameOfLifeInstance instance = IGameOfLifeInstance(256, 256);
+    SerialGameOfLife instance = SerialGameOfLife(256, 256);
     // the following is pretty much SDL2 boilerplate
     SDL_Window *window = SDL_CreateWindow("Game of life", 100, 100, instance.getWidth() * GUI_SCALE, instance.getHeight() * GUI_SCALE, SDL_WINDOW_SHOWN);
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
@@ -58,13 +58,14 @@ void runGUI() {
         }
 
         // Update the game
-        //instance.nextState();
+        instance.nextState();
 
         // Draw our game.
         SDL_UpdateTexture(texture, nullptr, instance.getCurrentState().data(), pitch);
         SDL_RenderClear(renderer);
         SDL_RenderCopy(renderer, texture, nullptr, nullptr);
         SDL_RenderPresent(renderer);
+
     }
 
     SDL_DestroyTexture(texture);

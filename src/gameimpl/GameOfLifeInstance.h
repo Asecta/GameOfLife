@@ -35,7 +35,7 @@ protected:
 
     bool updateCell(vector<int> &gameState, int index);
 
-    virtual void executeStep(vector<int> &oldState, vector<int> &newState);
+    void executeStep(vector<int> &oldState, vector<int> &newState);
 };
 
 
@@ -43,7 +43,7 @@ class SerialGameOfLife : public IGameOfLifeInstance {
 public:
     SerialGameOfLife(int width, int height);
 
-    virtual void executeStep(vector<int> &oldState, vector<int> &newState) override;
+    void executeStep(vector<int> &oldState, vector<int> &newState);
 };
 
 class ParallelGameOfLife : public IGameOfLifeInstance {
@@ -52,7 +52,7 @@ class ParallelGameOfLife : public IGameOfLifeInstance {
 public:
     ParallelGameOfLife(int width, int height, int threadCount);
 
-    virtual void executeStep(vector<int> &oldState, vector<int> &newState) override;
+    void executeStep(vector<int> &oldState, vector<int> &newState);
 };
 
 #endif

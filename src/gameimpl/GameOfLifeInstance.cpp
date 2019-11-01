@@ -1,7 +1,7 @@
 #include <vector>
 
 #include <tbb/tbb.h>
-
+#include <iostream>
 #include "GameOfLifeInstance.h"
 
 #pragma once
@@ -20,7 +20,7 @@ vector<int> IGameOfLifeInstance::getCurrentState() {
 }
 
 void IGameOfLifeInstance::setCell(int x, int y, bool state) {
-    if (0 < x || x >= width || 0 < y || y >= height)return;
+    if (x < 0 || x >= width || y < 0 || y >= height) return;
     gameState[y * height + x] = state ? BLACK : WHITE;
 }
 
@@ -60,24 +60,22 @@ int IGameOfLifeInstance::countAliveNeighbours(vector<int> &gameState,
 bool IGameOfLifeInstance::updateCell(vector<int> &gameState, int index) {
     int aliveNeighbors = countAliveNeighbours(gameState, index);
     bool state = getCellByIndex(gameState, index);
-    if (state && aliveNeighbors < 2)
-        return false;
-    if (state && aliveNeighbors > 3)
-        return false;
-    if (!state && aliveNeighbors == 3)
-        return true;
+    if (state && aliveNeighbors < 2) return false;
+    if (state && aliveNeighbors > 3) return false;
+    if (!state && aliveNeighbors == 3) return true;
     return state;
 }
 
+// This is running :)
 void IGameOfLifeInstance::executeStep(vector<int> &oldState, vector<int> &newState) {
-
+    cout << "I shouldn't be running hahahahaha" << endl << flush;
 }
 
 SerialGameOfLife::SerialGameOfLife(int width, int height)
-        : IGameOfLifeInstance(width, height) {}
+        : IGameOfLifeInstance(width, height) {
+}
 
-void SerialGameOfLife::executeStep(vector<int> &oldState,
-                                   vector<int> &newState) {
+void SerialGameOfLife::executeStep(vector<int> &oldState, vector<int> &newState) {
     for (int index = 0; index < getBoardSize(); index++) {
         newState[index] = updateCell(oldState, index) ? BLACK : WHITE;
     }
