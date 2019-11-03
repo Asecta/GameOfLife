@@ -5,7 +5,7 @@
 #include <tbb/tbb.h>
 #include <chrono>
 #include <ctime>
-#include "gameimpl/GameOfLifeInstance.h"
+#include "game/GameOfLife.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -13,7 +13,7 @@ using namespace std::chrono;
 const bool HEADLESS = false;
 const int GUI_SCALE = 3;
 
-void populate(IGameOfLifeInstance &instance) {
+void populate(IGameOfLife &instance) {
     ifstream initialStateFile;
     initialStateFile.open("../initialstate.txt");
 
@@ -35,7 +35,7 @@ void populate(IGameOfLifeInstance &instance) {
 
 
 void runGUI() {
-    SerialGameOfLife instance = SerialGameOfLife(256, 256);
+    ParallelGameOfLife instance = ParallelGameOfLife(256, 256, 8);
     // the following is pretty much SDL2 boilerplate
     SDL_Window *window = SDL_CreateWindow("Game of life", 100, 100, instance.getWidth() * GUI_SCALE, instance.getHeight() * GUI_SCALE, SDL_WINDOW_SHOWN);
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
@@ -79,7 +79,7 @@ void runHeadless() {
     int simulationStartSize = 64;
     int simulationSpaceStep = 64;
 
-    int simulationCount = 16;
+    int simulationCount = 8;
     int threadTestCount = 16;
     int threadStep = 2;
 
@@ -103,7 +103,7 @@ void runHeadless() {
         for (int simulationNo = 0; simulationNo < simulationCount; simulationNo++) {
             int width = simulationStartSize + simulationSpaceStep * simulationNo;
             int height = simulationStartSize + simulationSpaceStep * simulationNo;
-            IGameOfLifeInstance instance = ParallelGameOfLife(width, height, threadCount);
+            ParallelGameOfLife instance = ParallelGameOfLife(width, height, threadCount);
 
             populate(instance);
 
