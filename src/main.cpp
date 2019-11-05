@@ -10,7 +10,7 @@
 using namespace std;
 using namespace std::chrono;
 
-const bool HEADLESS = false;
+const bool HEADLESS = true;
 const int GUI_SCALE = 3;
 
 void populate(IGameOfLife &instance) {
@@ -80,8 +80,8 @@ void runHeadless() {
     int simulationSpaceStep = 64;
 
     int simulationCount = 8;
-    int threadTestCount = 16;
-    int threadStep = 2;
+    int threadTestCount = 1;
+    int threadStep = 1;
 
     cout << "Running game of life in headless mode..." << endl << flush;
     cout << "Steps per simulation: " << stepsPerSimulation << endl << flush;
@@ -103,7 +103,8 @@ void runHeadless() {
         for (int simulationNo = 0; simulationNo < simulationCount; simulationNo++) {
             int width = simulationStartSize + simulationSpaceStep * simulationNo;
             int height = simulationStartSize + simulationSpaceStep * simulationNo;
-            ParallelGameOfLife instance = ParallelGameOfLife(width, height, threadCount);
+            //ParallelGameOfLife instance = ParallelGameOfLife(width, height, threadCount);
+            SerialGameOfLife instance(width, height);
 
             populate(instance);
 

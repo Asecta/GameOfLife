@@ -26,8 +26,6 @@ public:
 
     int getBoardSize();
 
-    virtual vector<int> getCurrentState() = 0;
-
     virtual void setCell(int x, int y, bool alive) = 0;
 
     virtual void nextState() = 0;
@@ -40,7 +38,7 @@ protected:
 public:
     BasicGameOfLife(int width, int height);
 
-    vector<int> getCurrentState() override;
+    vector<int> getCurrentState();
 
     bool getCellByIndex(vector<int> &board, int index);
 
@@ -72,6 +70,32 @@ public:
     ParallelGameOfLife(int width, int height, int threadCount);
 
     void executeStep(vector<int> &oldState, vector<int> &newState) override;
+};
+
+class BitStuffedGameOfLife : public IGameOfLife {
+
+protected:
+    vector<uint_fast8_t> gameState;
+    int byteSize;
+
+public:
+
+    BitStuffedGameOfLife(int width, int height);
+
+    vector<uint_fast8_t> getCurrentState();
+
+    bool getCellByIndex(vector<uint_fast8_t> &board, int index);
+
+    int countAliveNeighbours(vector<uint_fast8_t> &gameState, int index);
+
+    bool updateCell(vector<uint_fast8_t> &gameState, int index);
+
+    void setCell(int x, int y, bool alive) override;
+
+    void nextState() override;
+
+    void executeStep(vector<uint_fast8_t> &oldState, vector<uint_fast8_t> &newState);
+
 };
 
 #endif
