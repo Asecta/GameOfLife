@@ -1,28 +1,27 @@
 #include "GameOfLife.h"
 
 BasicGameOfLife::BasicGameOfLife(int width, int height) : IGameOfLife(width, height) {
-    this->gameState = vector<int>(getBoardSize(), WHITE);
+    this->gameState = vector<uint_fast8_t>(getBoardSize(), DEAD);
 }
 
-vector<int> BasicGameOfLife::getCurrentState() {
+vector<uint_fast8_t> BasicGameOfLife::getCurrentState() {
     return this->gameState;
 }
 
 void BasicGameOfLife::setCell(int x, int y, bool state) {
     if (x < 0 || x >= getWidth() || y < 0 || y >= getHeight()) return;
-    gameState[y * getHeight() + x] = state ? BLACK : WHITE;
+    gameState[y * getHeight() + x] = state ? ALIVE : DEAD; // Calc index and write modifications
 }
 
 
-bool BasicGameOfLife::getCellByIndex(vector<int> &board, int index) {
-    if (index < 0 || index >= getBoardSize())
-        return false;
-    return board[index] == BLACK;
+bool BasicGameOfLife::getCellByIndex(vector<uint_fast8_t> &board, int index) {
+    if (index < 0 || index >= getBoardSize()) return false;
+    return board[index] == ALIVE; // Read if cell is alive
 }
 
-int BasicGameOfLife::countAliveNeighbours(vector<int> &gameState,
-                                          int index) {
+int BasicGameOfLife::countAliveNeighbours(vector<uint_fast8_t> &gameState, int index) {
     int count = 0;
+    // Using a hard coded method to get neighbours rather than iterating over them to increase performance
     count += getCellByIndex(gameState, index - getWidth() - 1) ? 1 : 0;
     count += getCellByIndex(gameState, index - getWidth()) ? 1 : 0;
     count += getCellByIndex(gameState, index - getWidth() + 1) ? 1 : 0;
@@ -34,7 +33,7 @@ int BasicGameOfLife::countAliveNeighbours(vector<int> &gameState,
     return count;
 }
 
-bool BasicGameOfLife::updateCell(vector<int> &gameState, int index) {
+bool BasicGameOfLife::updateCell(vector<uint_fast8_t> &gameState, int index) {
     int aliveNeighbors = countAliveNeighbours(gameState, index);
     bool state = getCellByIndex(gameState, index);
     if (state && aliveNeighbors < 2) return false;
@@ -44,8 +43,8 @@ bool BasicGameOfLife::updateCell(vector<int> &gameState, int index) {
 }
 
 void BasicGameOfLife::nextState() {
-    vector<int> oldState = gameState;
-    vector<int> newState(getBoardSize(), WHITE);
+    vector<uint_fast8_t> oldState = gameState;
+    vector<uint_fast8_t> newState(getBoardSize(), DEAD);
     executeStep(oldState, newState);
     gameState = newState;
 }
